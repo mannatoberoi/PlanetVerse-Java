@@ -1,52 +1,55 @@
 
 package service;
 
+import dao.CourseDAO;
+import dao.EnrollmentDAO;
+
 import model.Course;
 import model.Student;
 import model.Enrollment;
-import model.EnrollmentStatus;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CourseService {
 
-    private List<Course> courses;
-    private List<Enrollment> enrollments;
-    private int nextEnrollmentId;
+    private CourseDAO courseDAO;
+    private EnrollmentDAO enrollmentDAO;
 
     public CourseService() {
-        courses = new ArrayList<>();
-        enrollments = new ArrayList<>();
-        nextEnrollmentId = 1;
+        courseDAO = new CourseDAO();
+        enrollmentDAO = new EnrollmentDAO();
     }
 
     // Add course
     public void addCourse(Course course) {
 
         if (course == null) {
-            throw new IllegalArgumentException("Course cannot be null");
+            throw new IllegalArgumentException(
+                "Course cannot be null"
+            );
         }
 
-        courses.add(course);
+        if (courseDAO.getCourseById(course.getCourseId()) != null) {
+            throw new IllegalArgumentException(
+                "Course already exists"
+            );
+        }
+
+        if (!courseDAO.addCourse(course)) {
+            throw new IllegalStateException(
+                "Unable to save course in database"
+            );
+        }
     }
 
-    // View all courses
+    // Get all courses
     public List<Course> getAllCourses() {
-        return new ArrayList<>(courses);
+        return courseDAO.getAllCourses();
     }
 
     // Find course by ID
     public Course findCourseById(int courseId) {
-
-        for (Course course : courses) {
-
-            if (course.getCourseId() == courseId) {
-                return course;
-            }
-        }
-
-        return null;
+        return courseDAO.getCourseById(courseId);
     }
 
     // Enroll student
@@ -54,13 +57,17 @@ public class CourseService {
             Student student, int courseId) {
 
         if (student == null) {
-            throw new IllegalArgumentException("Student cannot be null");
+            throw new IllegalArgumentException(
+                "Student cannot be null"
+            );
         }
 
         Course course = findCourseById(courseId);
 
         if (course == null) {
-            throw new IllegalArgumentException("Course not found");
+            throw new IllegalArgumentException(
+                "Course not found"
+            );
         }
 
         if (!course.isEligible(student)) {
@@ -69,53 +76,55 @@ public class CourseService {
             );
         }
 
-        long enrolledCount = enrollments.stream()
-                .filter(e -> e.getCourse().getCourseId() == courseId)
-                .filter(e -> e.getStatus() == EnrollmentStatus.ENROLLED)
-                .count();
+        if (enrollmentDAO.isAlreadyEnrolled(
+                student.getUserId(), courseId)) {
+
+            throw new IllegalStateException(
+                "Student is already enrolled"
+            );
+        }
+
+        int enrolledCount =
+            enrollmentDAO.countEnrolledByCourse(courseId);
+
+        if (enrolledCount < 0) {
+            throw new IllegalStateException(
+                "Unable to check course capacity"
+            );
+        }
 
         if (enrolledCount >= course.getCapacity()) {
             throw new IllegalStateException("Course is full");
         }
 
-        for (Enrollment enrollment : enrollments) {
+        int enrollmentId =
+            enrollmentDAO.addEnrollmentAuto(student, course);
 
-            if (enrollment.getStudent() == student &&
-                enrollment.getCourse().getCourseId() == courseId &&
-                enrollment.getStatus() == EnrollmentStatus.ENROLLED) {
-
-                throw new IllegalStateException(
-                    "Student is already enrolled"
-                );
-            }
+        if (enrollmentId == -1) {
+            throw new IllegalStateException(
+                "Unable to save enrollment in database"
+            );
         }
 
-        Enrollment enrollment = new Enrollment(
-            nextEnrollmentId++, student, course
-        );
-
-        enrollments.add(enrollment);
-
-        return enrollment;
+        return new Enrollment(enrollmentId, student, course);
     }
 
-    // View all enrollments
+    // Get all enrollments from database
     public List<Enrollment> getAllEnrollments() {
-        return new ArrayList<>(enrollments);
+        return enrollmentDAO.getAllEnrollments();
     }
 
-    // View student's enrollments
+    // Get a student's enrollments from database
     public List<Enrollment> getStudentEnrollments(Student student) {
 
-        List<Enrollment> result = new ArrayList<>();
-
-        for (Enrollment enrollment : enrollments) {
-
-            if (enrollment.getStudent() == student) {
-                result.add(enrollment);
-            }
+        if (student == null) {
+            throw new IllegalArgumentException(
+                "Student cannot be null"
+            );
         }
 
-        return result;
+        return enrollmentDAO.getEnrollmentsByStudent(
+            student.getUserId()
+        );
     }
 }

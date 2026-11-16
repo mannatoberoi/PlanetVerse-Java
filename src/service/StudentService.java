@@ -1,16 +1,17 @@
 
 package service;
 
+import dao.StudentDAO;
 import model.Student;
-import java.util.ArrayList;
+
 import java.util.List;
 
 public class StudentService {
 
-    private List<Student> students;
+    private StudentDAO studentDAO;
 
     public StudentService() {
-        students = new ArrayList<>();
+        studentDAO = new StudentDAO();
     }
 
     // Add student
@@ -22,43 +23,31 @@ public class StudentService {
             );
         }
 
-        if (findStudentById(student.getUserId()) != null) {
+        if (studentDAO.getStudentById(student.getUserId()) != null) {
             throw new IllegalArgumentException(
                 "Student already exists"
             );
         }
 
-        students.add(student);
+        if (!studentDAO.addStudent(student)) {
+            throw new IllegalStateException(
+                "Unable to save student in database"
+            );
+        }
     }
 
     // Find student by ID
     public Student findStudentById(int userId) {
-
-        for (Student student : students) {
-
-            if (student.getUserId() == userId) {
-                return student;
-            }
-        }
-
-        return null;
+        return studentDAO.getStudentById(userId);
     }
 
     // Get all students
     public List<Student> getAllStudents() {
-        return new ArrayList<>(students);
+        return studentDAO.getAllStudents();
     }
 
     // Remove student
     public boolean removeStudent(int userId) {
-
-        Student student = findStudentById(userId);
-
-        if (student == null) {
-            return false;
-        }
-
-        students.remove(student);
-        return true;
+        return studentDAO.deleteStudent(userId);
     }
 }

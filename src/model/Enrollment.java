@@ -11,13 +11,31 @@ public class Enrollment {
     private LocalDateTime enrollmentDate;
     private EnrollmentStatus status;
 
+    // Three-argument constructor
     public Enrollment(int enrollmentId, Student student, Course course) {
+
+        this(
+            enrollmentId,
+            student,
+            course,
+            LocalDateTime.now(),
+            EnrollmentStatus.ENROLLED
+        );
+    }
+
+    // Five-argument constructor
+    public Enrollment(
+            int enrollmentId,
+            Student student,
+            Course course,
+            LocalDateTime enrollmentDate,
+            EnrollmentStatus status) {
 
         this.enrollmentId = enrollmentId;
         this.student = student;
         this.course = course;
-        this.enrollmentDate = LocalDateTime.now();
-        this.status = EnrollmentStatus.ENROLLED;
+        this.enrollmentDate = enrollmentDate;
+        this.status = status;
     }
 
     public int getEnrollmentId() {
