@@ -39,8 +39,9 @@ public class EnrollmentCallable implements Callable<Enrollment> {
             Enrollment enrollment =
                 courseService.enrollStudent(student, courseId);
 
-            completed = true;
-
+            if(enrollment != null){
+                completed = true;
+            }
             return enrollment;
 
         } finally {

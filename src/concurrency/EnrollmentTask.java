@@ -38,7 +38,9 @@ public class EnrollmentTask implements Runnable {
             Enrollment enrollment =
                 courseService.enrollStudent(student, courseId);
 
-            enrollmentCompleted = true;
+            if(enrollment != null){
+                enrollmentCompleted = true;
+            }
 
             System.out.println(
                 "Enrollment successful! ID: "
