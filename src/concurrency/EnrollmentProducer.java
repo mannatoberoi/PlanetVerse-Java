@@ -1,13 +1,17 @@
-
 package concurrency;
-
-import java.util.concurrent.BlockingQueue;
 
 public class EnrollmentProducer {
 
-    private BlockingQueue<EnrollmentTask> queue;
+    private final EnrollmentRequestQueue queue;
 
-    public EnrollmentProducer(BlockingQueue<EnrollmentTask> queue) {
+    public EnrollmentProducer(EnrollmentRequestQueue queue) {
+
+        if (queue == null) {
+            throw new IllegalArgumentException(
+                "Queue cannot be null"
+            );
+        }
+
         this.queue = queue;
     }
 
@@ -16,6 +20,8 @@ public class EnrollmentProducer {
 
         queue.put(task);
 
-        System.out.println("Enrollment request added to queue.");
+        System.out.println(
+            "Enrollment request added to queue."
+        );
     }
 }

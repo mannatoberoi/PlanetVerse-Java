@@ -1,31 +1,35 @@
 
 package concurrency;
 
-import java.util.concurrent.BlockingQueue;
-
 public class EnrollmentConsumer implements Runnable {
 
-    private BlockingQueue<EnrollmentTask> queue;
+    private final EnrollmentRequestQueue queue;
 
-    public EnrollmentConsumer(BlockingQueue<EnrollmentTask> queue) {
+    public EnrollmentConsumer(EnrollmentRequestQueue queue) {
+
+        if (queue == null) {
+            throw new IllegalArgumentException(
+                "Queue cannot be null"
+            );
+        }
+
         this.queue = queue;
     }
 
     @Override
     public void run() {
 
-        while (!Thread.currentThread().isInterrupted()) {
+        try {
 
-            try {
-                EnrollmentTask task = queue.take();
+            EnrollmentTask task;
 
+            while ((task = queue.take()) != null) {
                 task.run();
-
-            } catch (InterruptedException e) {
-
-                Thread.currentThread().interrupt();
             }
+
+        } catch (InterruptedException e) {
+
+            Thread.currentThread().interrupt();
         }
     }
 }
-
