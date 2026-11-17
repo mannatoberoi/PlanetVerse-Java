@@ -1,4 +1,3 @@
-
 package repository;
 
 import dao.StudentDAO;
@@ -6,9 +5,10 @@ import model.Student;
 
 import java.util.List;
 
-public class StudentRepository implements Repository<Student, Integer> {
+public class StudentRepository
+        implements Repository<Student, Integer> {
 
-    private StudentDAO studentDAO = new StudentDAO();
+    private final StudentDAO studentDAO = new StudentDAO();
 
     @Override
     public boolean save(Student student) {
@@ -27,6 +27,11 @@ public class StudentRepository implements Repository<Student, Integer> {
 
     @Override
     public boolean delete(Integer id) {
-        return false;
+
+        if (id == null) {
+            return false;
+        }
+
+        return studentDAO.deleteStudent(id);
     }
 }
