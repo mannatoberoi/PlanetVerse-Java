@@ -1,16 +1,15 @@
-
 package concurrency;
 
 import model.Student;
-import service.CourseService;
 import model.Enrollment;
+import service.CourseService;
 
 public class EnrollmentTask implements Runnable {
 
-    private Student student;
-    private int courseId;
-    private CourseService courseService;
-    private SlotManager slotManager;
+    private final Student student;
+    private final int courseId;
+    private final CourseService courseService;
+    private final SlotManager slotManager;
 
     public EnrollmentTask(Student student, int courseId,
                           CourseService courseService,
@@ -25,16 +24,21 @@ public class EnrollmentTask implements Runnable {
     @Override
     public void run() {
 
-        boolean slotAcquired = slotManager.acquireSlot(courseId);
-
-        if (!slotAcquired) {
-            System.out.println("No seats available!");
+        if (!slotManager.acquireSlot(courseId)) {
+            System.out.println(
+                "No seats available for course " + courseId
+            );
             return;
         }
 
+        boolean enrollmentCompleted = false;
+
         try {
+
             Enrollment enrollment =
                 courseService.enrollStudent(student, courseId);
+
+            enrollmentCompleted = true;
 
             System.out.println(
                 "Enrollment successful! ID: "
@@ -43,11 +47,15 @@ public class EnrollmentTask implements Runnable {
 
         } catch (RuntimeException e) {
 
-            slotManager.releaseSlot(courseId);
-
             System.out.println(
                 "Enrollment failed: " + e.getMessage()
             );
+
+        } finally {
+
+            if (!enrollmentCompleted) {
+                slotManager.releaseSlot(courseId);
+            }
         }
     }
 }
