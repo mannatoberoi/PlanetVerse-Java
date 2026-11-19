@@ -3,6 +3,7 @@ package service;
 
 import dao.CourseDAO;
 import dao.EnrollmentDAO;
+import dao.TransactionalEnrollmentDAO;
 
 import model.Course;
 import model.Student;
@@ -14,10 +15,12 @@ public class CourseService {
 
     private CourseDAO courseDAO;
     private EnrollmentDAO enrollmentDAO;
+    private TransactionalEnrollmentDAO transactionalEnrollmentDAO;
 
     public CourseService() {
         courseDAO = new CourseDAO();
         enrollmentDAO = new EnrollmentDAO();
+        transactionalEnrollmentDAO = new TransactionalEnrollmentDAO();
     }
 
     // Add course
@@ -52,9 +55,8 @@ public class CourseService {
         return courseDAO.getCourseById(courseId);
     }
 
-    // Enroll student
-    public synchronized Enrollment enrollStudent(
-            Student student, int courseId) {
+    // Enroll student using database transaction
+    public Enrollment enrollStudent(Student student, int courseId) {
 
         if (student == null) {
             throw new IllegalArgumentException(
@@ -70,39 +72,15 @@ public class CourseService {
             );
         }
 
-        if (!course.isEligible(student)) {
-            throw new IllegalStateException(
-                "Student is not eligible for this course"
-            );
-        }
-
-        if (enrollmentDAO.isAlreadyEnrolled(
-                student.getUserId(), courseId)) {
-
-            throw new IllegalStateException(
-                "Student is already enrolled"
-            );
-        }
-
-        int enrolledCount =
-            enrollmentDAO.countEnrolledByCourse(courseId);
-
-        if (enrolledCount < 0) {
-            throw new IllegalStateException(
-                "Unable to check course capacity"
-            );
-        }
-
-        if (enrolledCount >= course.getCapacity()) {
-            throw new IllegalStateException("Course is full");
-        }
-
-        int enrollmentId =
-            enrollmentDAO.addEnrollmentAuto(student, course);
+        int enrollmentId = transactionalEnrollmentDAO.enroll(
+            student.getUserId(),
+            courseId
+        );
 
         if (enrollmentId == -1) {
             throw new IllegalStateException(
-                "Unable to save enrollment in database"
+                "Enrollment rejected: student may be ineligible, "
+                + "already enrolled, or the course may be full."
             );
         }
 
